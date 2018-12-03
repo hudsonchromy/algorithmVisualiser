@@ -1,70 +1,110 @@
 void mousePressed() {
-  if(editing && mouseY < 750 && mouseX < 750) {
-    makePath();
+  //println(screen);
+  if(screen == bfsScreen || screen == aStarScreen) {
+    if(editing && mouseY < 750 && mouseX < 750) {
+      makePath();
+    }
+    if(mouseY >= 750) {
+      menuButtons();
+    }
   }
-  if(mouseY >= 750) {
-    menuButtons();
+   else if(screen == 101 || screen == 102) {
+     println("::::::::::");
+     menuButtons();
+   }
+   else if(screen == 0) {
+    mainMenuButtons();
   }
+  
 }
 
 void keyPressed() {
-  if(keyCode == 32) {
-    makePath();
-  }
-  else if(keyCode == 49) {
-    editMode = 0;
-    editButton = "Switch";
-  }
-  //Q
-  else if(keyCode == 81) {
-    System.out.println("Q");
-    editButton = "On";
-    editMode = 1;
-  }
-  //A
-  else if(keyCode == 65) {
-    editButton = "Start";
-    editMode = 2;
-  }
-  //Z
-  else if(keyCode == 90) {
-    editButton = "End";
-    editMode = 3;
+  if(!(screen == 101 || screen == 102)) {
+    if(keyCode == 32) {
+      makePath();
+    }
+    else if(keyCode == 49) {
+      editMode = 0;
+      editButton = "Switch";
+    }
+    //Q
+    else if(keyCode == 81) {
+      System.out.println("Q");
+      editButton = "On";
+      editMode = 1;
+    }
+    //A
+    else if(keyCode == 65) {
+      editButton = "Start";
+      editMode = 2;
+    }
+    //Z
+    else if(keyCode == 90) {
+      editButton = "End";
+      editMode = 3;
+    }
+    //S
+    //else if(keyCode == 83) {
+    //  makeFile();
+    //}
+    //D
+    else if(keyCode == 68) {
+      screen = 100 + screen;
+    } 
+    else if (keyCode == 76) {
+      set();
+    }
+  } else {
+    gettingInput(keyCode, key);
   }
 }
 
 
  public void menuButtons() {
-   if(mouseX <= 80) {
+   if(editingButton.isClicked()) {
     editing = !editing;
     //System.out.println("----------\nMouse 1\n------------");
   }
-  else if(mouseX <= 180) {
-    //System.out.println("----------\nButton 2 \n-----------");
+  else if(bfsButton.isClicked()) {
     lengthPath = bfs();
-    System.out.println(lengthPath);
-    //System.out.println("----------\nButton 2 2\n-----------");
+    //System.out.println(lengthPath);
+
   }
-  else if(mouseX <= 280) {
+  else if(aStarButton.isClicked()) {
+    lengthPath = aStar();
+  }
+  else if(resetButton.isClicked()) {
     reset();
   }
-  else if (mouseX <= 340) {
+  else if (secondDelayButton.isClicked()) {
+    delayTime = delayTime + 10;
+    firstDelayButton.setText("TD: " + delayTime);
+  }
+  else if (firstDelayButton.isClicked()) {
     delayTime += 100;
     if(delayTime > 1000) delayTime -= 1000;
+    firstDelayButton.setText("TD: " + delayTime);
   }
-  else if (mouseX <= 380) {
-    delayTime = delayTime + 10;
-  }
-  else if (mouseX <= 480) {
+  else if (invertButton.isClicked()) {
     invertColors();
+  }
+  else if (gotoMMButton.isClicked()) {
+    set();
+    screen = 0;
+  }
+  else if(inButton.isClicked()) {
+    readFileIn();
+  }
+  else if(outButton.isClicked()) {
+    makeFile();
   }
  }
  
  
  
    public void makePath() {
-    int j = (int)(mouseX / (width / rows));
-    int i = (int)(mouseY / (height / cols));
+    int j = (int)(mouseX / (width / cols));
+    int i = (int)(mouseY / (height / rows));
     if(i > rows -1 || j > cols - 1) {
       return;
     }
@@ -88,3 +128,22 @@ void keyPressed() {
       end.setColor(ends);
     }
   }
+  
+  public void mainMenuButtons() {
+    if(bfsMMButton.isClicked()) {
+      System.out.println("]]]]]");
+      screen = 1;
+    } else if(aStarMMButton.isClicked()) {
+      System.out.println("[[[[[[[[[");
+      screen = 2;
+    } else if(settingButton.isClicked()) {
+      System.out.println("|||||||||||");
+      screen = 4;
+    }
+  }
+  
+  
+
+  
+  
+  

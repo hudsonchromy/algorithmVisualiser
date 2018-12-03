@@ -1,19 +1,31 @@
 import java.io.*;
 import java.util.*;
 
+PImage settingImg;
+PrintWriter output;
+
 
 static Cell[][] grid;
 //i = row
 //j = col
 // Number of columns and rows in the grid
-static int cols = 20;
-static int rows = 20;
+static int cols = 50;
+static int rows = 50;
 static int ccount = 0;
-static int delayTime = 100;
+static int delayTime = 10;
+static int lengthPath;
 static int startTime;
 static int timing;
-static boolean[][] visited = new boolean[rows][cols];
+static int screen = 0;
+static int bfsScreen = 1;
+static int aStarScreen = 2;
+static int menuScreen = 0;
+static int searchSpaceNum = 0;
 static Queue<Cell[]> Q = new LinkedList<Cell[]>();
+
+static Cell[][] lastCell = new Cell[rows][cols];
+
+
 int height = 750;
 int width = 750;
 static final int UP = 0;
@@ -21,6 +33,7 @@ static final int RIGHT = 1;
 static final int DOWN = 2;
 static final int LEFT = 3;
 ArrayList<Cell> order = new ArrayList<Cell>();
+ArrayList<Cell> searchSpace = new ArrayList<Cell>();
 static int delayNum = 10;
 static Cell[] finalCurPath;
 static int[] testC = {100, 245, 6};
@@ -31,178 +44,95 @@ static int[] ends = {100, 87, 87};
 static int[] visitedC = {243, 232, 178};
 static int[] blinkOne = {255, 48, 54};
 static int[] blinkTwo = {224, 175, 70};
+static int[] sideText = {227, 207, 170};
 boolean editing = true;
 
-static String editButton = "Edit";
+static String editButton = "Switch";
+static int editMode = 0;
 static String BFSButton = "BFS";
-static String resetButton = "Reset";
+//static String resetButton = "Reset";
 
 
 //Start and End
-Cell start;
-Cell end;
+static Cell start;
+static Cell end;
+
+int[] menuOnly = {0};
+int[] mazeScreens = {1, 2, 3, 101, 102};
+int[] inputScreens = {101, 102};
+int[] bfsScreenOnly = {1};
+int[] aStarScreenOnly = {2};
+
+
+
+Button aStarMMButton = new Button(150, 260, 450, 70, 168, 50,  "A Star", 40, menuOnly);
+Button bfsMMButton = new Button(150, 120, 450, 70, 48, 50, "Breadth First Search", 40, menuOnly);
+Button settingButton = new Button(700, 100, 80, 80, 0, 0, "", 1, menuOnly);
+
+Button editingButton = new Button(0, 744, 80, 50, 10, 30, "Edit", 20, mazeScreens);
+Button bfsButton = new Button(100, 744, 80, 50, 10, 30, "BFS", 20, bfsScreenOnly);
+Button aStarButton = new Button(100, 744, 80, 50, 10, 30, "A*", 20, aStarScreenOnly);
+Button firstDelayButton = new Button(300, 744, 80, 50, 10, 30, "TD: 30", 20, mazeScreens);
+Button secondDelayButton = new Button(350, 744, 40, 50, 10, 30, "", 20, mazeScreens);
+Button resetButton = new Button(200, 744, 80, 50, 10, 30, "Reset", 20, mazeScreens);
+Button invertButton = new Button(400, 744, 80, 50, 10, 30, "Invert", 20, mazeScreens);
+Button gotoMMButton = new Button(500, 744, 80, 50, 10, 30, "Menu", 20, mazeScreens);
+
+Button inButton = new Button(200, 0, 100, 60, 10, 30, "In", 20, inputScreens);
+Button outButton = new Button(300, 0, 100, 60, 10, 30, "Out", 20, inputScreens);
 
 
 
 
 void setup() {
-  System.out.println("=");
-  //printArray(Serial.list());
-  //myPort = new Serial(this, Serial.list()[0], 9600);
-  size(750, 800);
-  grid = new Cell[cols][rows];
-  for (int i = 0; i < rows; i++) {
-    for (int j = 0; j < cols; j++) {
+  settingImg = loadImage("settingIcon.png");
+  size(820, 800);
+  grid = new Cell[rows][cols];
+  for (int j = 0; j < rows; j++) {
+    for (int i = 0; i < cols; i++) {
       // Initialize each object
-      grid[j][i] = new Cell(i*(width/rows),j*(height/cols),(width/rows),(height/cols), i, j);
+      grid[j][i] = new Cell(i*(height/cols),j*(width/rows),(height/cols),(width/rows), i, j);
     }
   }
-  grid[0][0].setColor(ends);
-  grid[cols-1][rows-1].setMoveable(true);
-  grid[cols-1][rows-1].setColor(ends);
-  grid[0][0].setVisited(true);
+  start = grid[0][0];
+  end = grid[rows-1][cols-1];
+  start.setColor(ends);
+  start.setVisited(true);
+  end.setMoveable(true);
+  end.setColor(ends);
+  
   //System.out.println(Arrays.toString(grid));
 }
 
+
+
+
 void draw() {
-  //System.out.println("=-=-=-=-=");
-  
-  background(0);
-  
-  fill(100, 100, 100);
-  //BUTTONS
-  //edit
-  rect(0, 750, 80, 50);
-  //breadth first search
-  rect(100, 750, 80, 50);
-  //reset
-  rect(200, 750, 80, 50);
-  //time delay
-  rect(300, 750, 80, 50);
-  //invert
-  rect(400, 750, 80, 50);
-  
-  
-  fill(120, 182, 157);
-  textSize(20);
-  text(editButton, 5, 770);
-  text(BFSButton, 105, 770);
-  text(resetButton, 205, 770);
-  text("TD", 305, 770);
-  text(delayTime, 335, 770);
-  text("Invert", 405, 770);
-  
-  //System.out.println(Arrays.toString(grid[0][2].getColor()));
-  for (int i = 0; i < rows; i++) {
-    for (int j = 0; j < cols; j++) {
-      grid[j][i].display();
-    }
-  }
-  
-  if(finalCurPath != null) {
-    if((int)((millis() - startTime) / delayTime) == ccount) {
-      //System.out.println(millis());
-      timeShow(ccount);
-      ccount++;
-    }
-  }
-  else {
-    startTime = millis();
-  }
-  //testShow();
-}
-
-void mousePressed() {
-  if(editing && mouseY < 750) {
-    makePath();
-  }
-  if(mouseY >= 750) {
-    menuButtons();
-  }
-}
-
-void keyPressed() {
-  if(keyCode == 32) {
-    makePath();
+  //println(screen);
+  if(screen == bfsScreen || screen == 100 + bfsScreen) {
+    drawBFS();
+  } else if(screen == menuScreen) {
+    drawMenu();
+  } else if(screen == aStarScreen || screen == 100 + aStarScreen) {
+    drawAStar();
+  } else {
+    drawSetting();
   }
 }
 
 
-public int bfs() {
-  System.out.println("++++++++++++++++++++++++");
-  //System.out.println(grid[1][0].getVisited());
-  Cell[] start = {grid[0][0]};
-  Q.offer(start);
-  while(Q.size() != 0) {
-    //delay(100);
-    //System.out.print(Q);
-    Cell[] curPath = Q.poll();
-    Cell lastCell = curPath[curPath.length - 1];
-    if(lastCell.equals(grid[rows-1][cols-1])) {
-      //for(int index = 1; index < curPath.length - 1; index++) {
-      //  curPath[index].setColor(pathShortest);
-      finalCurPath = curPath;
-      //}
-      return curPath.length;
-    }
-    //System.out.println(Arrays.toString(lastCell.getColor()));
-    for(int i = 0; i != 4; i++) {
-      //delay(50);
-      //delay(100);
-      Cell[] newCurPath = Arrays.copyOf(curPath, curPath.length + 1);
-      //System.out.println(lastCell.canMove2(i));
-      if(lastCell.canMove(i)) {
-        //System.out.println("");
-        Cell newCell = lastCell.getNext(i);
-        ///newCell.setColor(visitedC);
-        order.add(newCell);
-        newCell.setVisited(true);
-        newCurPath[newCurPath.length - 1] = newCell;
-        Q.offer(newCurPath);
-        //grid[0][2].setColor(testC);
-        //redraw();
-        //updateMid();
-        //fill(243, 232, 178);
-        //System.out.println("hhhhhhhhhhh\nhhhhhhhhhhhhhhh\nhhhhhhhhhhhhhhhhhh\nhhhhhhhhhhhhhhhhh");
-        //delay(5000000);
-      }
-    }
-  }
-  return 100000;
-}
 
 
 
 
-static int getChangeX(int dir) {
-    switch (dir) {
-      case LEFT:
-        return -1;
-      case RIGHT:
-        return 1;
-      default:
-        return 0;
-    }
-  }
 
-static int getChangeY(int dir) {
-    switch (dir) {
-      case UP:
-        return -1;
-      case DOWN:
-        return 1;
-      default:
-        return 0;
-    }
-  }
+
+
+
+
+
   
-  public void makePath() {
-    int j = (int)(mouseX / (width / rows));
-    int i = (int)(mouseY / (height / cols));
-    if(!(i == 0 && j == 0) && !(i == rows-1 && j == cols-1) && (i < rows) && (j < cols)) {
-      grid[i][j].switchMoveable();
-    }
-  }
+
  
  public void setTest() {
     grid[0][2].setColor(testC);
@@ -210,56 +140,15 @@ static int getChangeY(int dir) {
     rect(50, 50, 300, 300);
  }
  
- public int timeShow(int countStop) {
-    int count = 0;
-    for(Cell c: order) {
-      if(count > countStop) return 1;
-      count++;
-      c.setColor(visitedC);
-      c.display();
-    }
-    for(int index = 1; index < finalCurPath.length - 1; index++) {
-      if(count > countStop) return 1;
-      count++;
-      finalCurPath[index].setColor(pathShortest);
-      finalCurPath[index].display();
-    }
-    if(count > countStop) return 1;
-    if(countStop % 2 == 0) {
-      grid[rows-1][cols-1].setColor(blinkOne);
-      grid[rows-1][cols-1].display();
-    } else {
-      grid[rows-1][cols-1].setColor(blinkTwo);
-      grid[rows-1][cols-1].display();
-    }
-    return 0;
- }
+
  
- public void reset() {
-   for(boolean[] row: visited) {
-     Arrays.fill(row, false);
-   }
-   Q.clear();
-   order.clear();
-   ccount = 0;
-   finalCurPath = null;
-   for (int i = 0; i < rows; i++) {
-    for (int j = 0; j < cols; j++) {
-      // Initialize each object
-      grid[j][i] = new Cell(i*(width/rows),j*(height/cols),(width/rows),(height/cols), i, j);
-    }
-  }
-  grid[0][0].setColor(ends);
-  grid[cols-1][rows-1].setMoveable(true);
-  grid[cols-1][rows-1].setColor(ends);
-  grid[0][0].setVisited(true);
- }
+
  
  
  public void invertColors() {
    for (int i = 0; i < rows; i++) {
      for(int j = 0; j < cols; j++) {
-       if(!(i == 0 && j == 0) && !(i == rows -1 && j == cols -1)) {
+       if(!(grid[i][j].equals(start)) && !(grid[i][j].equals(end))) {
          grid[i][j].switchMoveable();
        }
      }
@@ -268,44 +157,13 @@ static int getChangeY(int dir) {
  
  
  
- public void menuButtons() {
-   if(mouseX <= 80) {
-    editing = !editing;
-    System.out.println("----------\nMouse 1\n------------");
-  }
-  else if(mouseX <= 180) {
-    System.out.println("----------\nButton 2 \n-----------");
-    System.out.println(bfs());
-    System.out.println("----------\nButton 2 2\n-----------");
-  }
-  else if(mouseX <= 280) {
-    reset();
-  }
-  else if (mouseX <= 340) {
-    delayTime -= 100;
-    if(delayTime < 0) delayTime = 0;
-  }
-  else if (mouseX <= 380) {
-    delayTime += 100;
-  }
-  else if (mouseX <= 480) {
-    invertColors();
-  }
- }
+
  /*
  To Do
- Make the start and end switchable
- -make selector for block, calls switcher
  
  
  Ideas
  Adiascent is valid
- click for prolonged period to get more reset options
  Erratic ants visualizer
- Add support for import files
- Add custom flipping through time delay
- 
- 
- 
  
  */
