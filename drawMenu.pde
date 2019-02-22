@@ -7,7 +7,7 @@ void drawMenu() {
   
   fill(238, 60, 60);
   textSize(70);
-  text("Algorithm Visualiser", 60, 60);
+  text("Algorithm Visualizer", 60, 60);
   
   
   
